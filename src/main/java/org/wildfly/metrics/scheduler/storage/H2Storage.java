@@ -19,9 +19,11 @@
 
 package org.wildfly.metrics.scheduler.storage;
 
+import org.wildfly.metrics.scheduler.SchedulerLogger;
 import org.wildfly.metrics.scheduler.config.Configuration;
 import org.wildfly.metrics.scheduler.diagnose.Diagnostics;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -49,7 +51,12 @@ public class H2Storage implements StorageAdapter {
     public void start() {
         try {
             Class.forName("org.h2.Driver");
-            connection = DriverManager.getConnection("jdbc:h2:~/test", "sa", "");
+            String dbLocation = System.getProperty("java.io.tmpdir")+ File.pathSeparatorChar+config.getStorageDBName();
+            SchedulerLogger.LOGGER.info("Database dir: "+ dbLocation);
+
+            connection = DriverManager.getConnection("jdbc:h2:"+dbLocation, "sa", "");
+
+            // create tables if necessary
 
         } catch (Throwable e) {
             throw new RuntimeException("Failed to initialize database connection");
