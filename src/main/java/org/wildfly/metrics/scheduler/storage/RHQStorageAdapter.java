@@ -1,84 +1,51 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.wildfly.metrics.scheduler.storage;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.rhq.metrics.client.common.Batcher;
-import org.rhq.metrics.client.common.SingleMetric;
 import org.wildfly.metrics.scheduler.config.Configuration;
 import org.wildfly.metrics.scheduler.diagnose.Diagnostics;
-import org.wildfly.metrics.scheduler.polling.Task;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 /**
- * Pushes the data to RHQ metrics.
- *
  * @author Heiko Braun
- * @since 13/10/14
+ * @since 10/06/15
  */
 public class RHQStorageAdapter implements StorageAdapter {
+    @Override
+    public void init(Configuration config, Diagnostics diagnostics) {
 
-    private Configuration config;
-    private Diagnostics diagnostics;
-    private final HttpClient httpclient;
-    private final DefaultKeyResolution keyResolution;
-
-    public RHQStorageAdapter() {
-        this.httpclient = new DefaultHttpClient();
-        this.keyResolution = new DefaultKeyResolution();
     }
 
     @Override
-    public void setConfiguration(Configuration config) {
-        this.config = config;
-    }
+    public void start() {
 
-    @Override
-    public void setDiagnostics(Diagnostics diag) {
-        this.diagnostics = diag;
     }
 
     @Override
     public void store(Set<DataPoint> datapoints) {
-        HttpPost post = new HttpPost(config.getStorageUrl());
-        try {
-            List<SingleMetric> metrics = new ArrayList<>();
 
-            for (DataPoint datapoint : datapoints) {
-                Task task = datapoint.getTask();
-                String key = keyResolution.resolve(task);
-                metrics.add(new SingleMetric(key, datapoint.getTimestamp(), datapoint.getValue()));
-            }
+    }
 
-
-            // If we have data, send it to the RHQ Metrics server
-
-            if (metrics.size()>0) {
-                post.setHeader("Content-Type", "application/json;charset=utf-8");
-                post.setEntity(new StringEntity(Batcher.metricListToJson(metrics)));
-
-                HttpResponse httpResponse = httpclient.execute(post);
-                StatusLine statusLine = httpResponse.getStatusLine();
-
-                if (statusLine.getStatusCode() != 200) {
-                    throw new Exception("HTTP Status "+statusLine.getStatusCode()+": "+statusLine);
-                }
-
-
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
-            diagnostics.getStorageErrorRate().mark(1);
-        }
-        finally {
-            post.releaseConnection();
-        }
+    @Override
+    public void stop() {
 
     }
 }

@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.wildfly.metrics.scheduler;
 
 import com.codahale.metrics.ConsoleReporter;
@@ -16,6 +35,7 @@ import org.wildfly.metrics.scheduler.polling.IntervalBasedScheduler;
 import org.wildfly.metrics.scheduler.polling.Scheduler;
 import org.wildfly.metrics.scheduler.polling.Task;
 import org.wildfly.metrics.scheduler.storage.BufferedStorageDispatcher;
+import org.wildfly.metrics.scheduler.storage.H2Storage;
 import org.wildfly.metrics.scheduler.storage.InfluxStorageAdapter;
 import org.wildfly.metrics.scheduler.storage.RHQStorageAdapter;
 import org.wildfly.metrics.scheduler.storage.StorageAdapter;
@@ -67,21 +87,13 @@ public class Service implements TopologyChangeListener {
 
         this.configuration = configuration;
 
+        //  diagnostics
         final MetricRegistry metrics = new MetricRegistry();
-
         this.diagnostics = createDiagnostics(metrics);
 
-        if(Configuration.Storage.RHQ == configuration.getStorageAdapter())
-        {
-            this.storageAdapter = new RHQStorageAdapter();
-        }
-        else
-        {
-            this.storageAdapter = new InfluxStorageAdapter();
-        }
-
-        this.storageAdapter.setConfiguration(configuration);
-        this.storageAdapter.setDiagnostics(diagnostics);
+        // storage
+        this.storageAdapter = createStorageAdapter(configuration);
+        this.storageAdapter.init(configuration, diagnostics);
 
         if(Configuration.Diagnostics.CONSOLE == configuration.getDiagnostics()) {
 
@@ -98,6 +110,7 @@ public class Service implements TopologyChangeListener {
                     .build();
         }
 
+        // dispatch
         this.completionHandler = new BufferedStorageDispatcher(storageAdapter, diagnostics);
 
         this.scheduler = new IntervalBasedScheduler(
@@ -105,6 +118,26 @@ public class Service implements TopologyChangeListener {
                 diagnostics,
                 configuration.getSchedulerThreads()
         );
+    }
+
+    private StorageAdapter createStorageAdapter(Configuration configuration) {
+
+        StorageAdapter storageAdapter = null;
+
+        if(Configuration.Storage.RHQ == configuration.getStorageAdapter())
+        {
+            storageAdapter = new RHQStorageAdapter();
+        }
+        else if(Configuration.Storage.INFLUX == configuration.getStorageAdapter())
+        {
+            storageAdapter = new InfluxStorageAdapter();
+        }
+        else
+        {
+            storageAdapter = new H2Storage();
+        }
+
+        return storageAdapter;
     }
 
     private Diagnostics createDiagnostics(final MetricRegistry metrics) {
@@ -146,6 +179,7 @@ public class Service implements TopologyChangeListener {
     public void start(String host, String server) {
 
         // turn ResourceRef into Tasks (relative to absolute addresses ...)
+        storageAdapter.start();
         List<Task> tasks = createTasks(host, server, configuration.getResourceRefs());
         this.completionHandler.start();
         this.scheduler.schedule(tasks, completionHandler);
@@ -170,10 +204,12 @@ public class Service implements TopologyChangeListener {
     }
 
     public void stop() {
+
         this.completionHandler.shutdown();
         this.scheduler.shutdown();
         this.reporter.stop();
         this.reporter.report();
+        storageAdapter.stop();
     }
 
     @Override
