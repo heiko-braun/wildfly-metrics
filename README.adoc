@@ -1,11 +1,11 @@
-= WildFly Monitor
+= WildFly Metrics
 
 This is a module to be deployed into WildFlyAS and which then takes
 measurements from the WildFly model and sends them to a persistent storage
 
 == Prerequisites
 
-=== Wildfly 8.1.0
+=== Wildfly 8.1.0  (might work on newer versions, but needs to be ported)
 
 Get and install Wildfly 8.1.0: http://download.jboss.org/wildfly/8.1.0.Final/wildfly-8.1.0.Final.zip
 
@@ -41,7 +41,7 @@ domain/configuration/monitor-host.xml (5)`
 ....
 
 . The module descriptor
-. Required libraries to run the monitor on Wildfly
+. Required libraries to run the metrics subsystem on Wildfly
 . An example configuration for standalone servers
 . An example configuration for managed domains
 . An example host configuration
@@ -63,8 +63,8 @@ The wildfly-monitor-module.zip server profiles for both standalone and domain mo
 
 The best way to reach out and discuss the monitor subsystem is the RHQ  mailing list and/or the Chat Room:
 
-- Mailing List: https://lists.fedorahosted.org/mailman/listinfo/rhq-devel
-- IRC: irc://freenode.org/#rhq
+- Mailing List: https://lists.jboss.org/mailman/listinfo/wildfly-dev
+- IRC: irc://freenode.org/#wildfly
 
 ## License
 
