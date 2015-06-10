@@ -99,8 +99,8 @@
         <subsystem xmlns="urn:org.wildfly.metrics:wildfly-monitor:1.0">
 
             <storage-adapter
-                    name="rhq"
-                    url="http://localhost:8080/rhq-metrics/metrics" db="wildfly"/>
+                    name="h2"
+                    url="http://localhost:8080" db="wildfly-metrics"/>
 
             <server-monitor name="default" enabled="true" num-threads="2">
 
@@ -125,6 +125,7 @@
                     name="console"
                     enabled="true" seconds="10"/>
         </subsystem>
+
         <subsystem xmlns="urn:jboss:domain:logging:2.0">
             <console-handler name="CONSOLE">
                 <level name="INFO"/>

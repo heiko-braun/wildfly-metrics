@@ -35,8 +35,8 @@ import org.jboss.logging.MessageLogger;
 @MessageLogger(projectCode = "<<none>>")
 public interface MonitorLogger extends BasicLogger {
     /**
-     * A logger with the category {@code org.rhq.wfly.monitor}.
+     * A logger with the category {@code org.wildfly.metrics.monitor}.
      */
-    MonitorLogger LOGGER = Logger.getMessageLogger(MonitorLogger.class, "org.rhq.wfly.monitor");
+    MonitorLogger LOGGER = Logger.getMessageLogger(MonitorLogger.class, "org.wildfly.metrics.monitor");
 
 }

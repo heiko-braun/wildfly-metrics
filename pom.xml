@@ -28,7 +28,16 @@
     <artifactId>wildfly-monitor</artifactId>
     <version>0.3.0-SNAPSHOT</version>
 
-    <name>WildFly Monitor Subsystem</name>
+    <name>WildFly Monitoring Subsystem</name>
+
+    <contributors>
+        <contributor>
+            <name>Heiko Braun</name>
+        </contributor>
+        <contributor>
+            <name>Harald Pehl</name>
+        </contributor>
+    </contributors>
 
     <packaging>jar</packaging>
 
@@ -39,7 +48,7 @@
         <version.guava>18.0</version.guava>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <wildfly.version>8.1.0.Final</wildfly.version>
-        <rhq-metric.clients-common.version>0.2.4</rhq-metric.clients-common.version>
+
         <codehale.version>3.1.0</codehale.version>
         <version.org.jboss.logging.jboss-logging>3.1.4.GA</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.logging.jboss-logging-tools>1.2.0.Final</version.org.jboss.logging.jboss-logging-tools>
@@ -249,11 +258,6 @@
             <version>${version.guava}</version>
         </dependency>
         <dependency>
-            <groupId>org.rhq.metrics</groupId>
-            <artifactId>clients-common</artifactId>
-            <version>${rhq-metric.clients-common.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-controller</artifactId>
             <version>${wildfly.version}</version>
@@ -310,6 +314,12 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+
     </dependencies>
 
 
@@ -349,12 +359,6 @@
             <name>JBoss Releases Repository</name>
             <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
         </repository>
-
-        <site>
-            <id>local-site-tmp</id>
-            <name>RHQ-metrics</name>
-            <url>file:///tmp/rhq-metrics-site</url>
-        </site>
 
     </distributionManagement>
 

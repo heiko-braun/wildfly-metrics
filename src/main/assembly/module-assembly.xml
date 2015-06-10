@@ -75,7 +75,6 @@
                 <include>org.apache.httpcomponents:httpcore</include>
                 <include>commons-logging:commons-logging</include>
                 <include>commons-codec:commons-codec</include>
-                <include>org.rhq.metrics:clients-common</include>
             </includes>
         </dependencySet>
 
