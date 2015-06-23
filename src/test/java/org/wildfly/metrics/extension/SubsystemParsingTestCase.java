@@ -48,17 +48,18 @@ import org.junit.Test;
  */
 public class SubsystemParsingTestCase extends SubsystemBaseParsingTestCase {
 
-        @Override
-        @Before
-        public void initializeParser() throws Exception {
-            super.initializeParser();
-        }
+    @Override
+    @Before
+    public void initializeParser() throws Exception {
+        super.initializeParser();
+    }
 
-        @Override
-        @After
-        public void cleanup() throws Exception {
-            super.cleanup();
-        }
+    @Override
+    @After
+    public void cleanup() throws Exception {
+        super.cleanup();
+    }
+
     /**
      * Tests that the xml is parsed into the correct operations
      */
