@@ -19,48 +19,24 @@
 
 package org.wildfly.metrics.scheduler.storage;
 
-import org.wildfly.metrics.scheduler.SchedulerLogger;
 import org.wildfly.metrics.scheduler.config.Configuration;
 import org.wildfly.metrics.scheduler.diagnose.Diagnostics;
 
-import java.io.File;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.Set;
 
 /**
  * @author Heiko Braun
- * @since 10/06/15
+ * @since 23/06/15
  */
-public class H2Storage implements StorageAdapter {
-
-    private Configuration config;
-    private Diagnostics diagnostics;
-    private Connection connection;
-
+public class LogStore implements StorageAdapter {
     @Override
     public void init(Configuration config, Diagnostics diagnostics) {
-
-        this.config = config;
-        this.diagnostics = diagnostics;
 
     }
 
     @Override
     public void start() {
-        try {
-            Class.forName("org.h2.Driver");
-            String dbLocation = System.getProperty("java.io.tmpdir")+ File.pathSeparatorChar+config.getStorageDBName();
-            SchedulerLogger.LOGGER.info("Database dir: "+ dbLocation);
 
-            connection = DriverManager.getConnection("jdbc:h2:"+dbLocation, "sa", "");
-
-            // create tables if necessary
-
-        } catch (Throwable e) {
-            throw new RuntimeException("Failed to initialize database connection");
-        }
     }
 
     @Override
@@ -70,11 +46,6 @@ public class H2Storage implements StorageAdapter {
 
     @Override
     public void stop() {
-        try {
-            if(connection!=null)
-                connection.close();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to close connection", e);
-        }
+
     }
 }

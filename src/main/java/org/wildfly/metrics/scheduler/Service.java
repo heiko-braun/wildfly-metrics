@@ -35,7 +35,6 @@ import org.wildfly.metrics.scheduler.polling.IntervalBasedScheduler;
 import org.wildfly.metrics.scheduler.polling.Scheduler;
 import org.wildfly.metrics.scheduler.polling.Task;
 import org.wildfly.metrics.scheduler.storage.BufferedStorageDispatcher;
-import org.wildfly.metrics.scheduler.storage.H2Storage;
 import org.wildfly.metrics.scheduler.storage.InfluxStorageAdapter;
 import org.wildfly.metrics.scheduler.storage.RHQStorageAdapter;
 import org.wildfly.metrics.scheduler.storage.StorageAdapter;
@@ -134,7 +133,7 @@ public class Service implements TopologyChangeListener {
         }
         else
         {
-            storageAdapter = new H2Storage();
+            // TODO
         }
 
         return storageAdapter;

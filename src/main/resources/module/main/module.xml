@@ -28,7 +28,6 @@
         <resource-root path="okio-1.0.0.jar"/>
         <resource-root path="retrofit-1.6.0.jar"/>
         <resource-root path="slf4j-api-1.7.7.jar"/>
-        <resource-root path="h2-1.4.187.jar"/>
         <resource-root path="wildfly-monitor.jar"/>
     </resources>
 

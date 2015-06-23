@@ -241,11 +241,11 @@
             </dependency>
 
             <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>1.4.187</version>
+                <groupId>org.jetbrains.xodus</groupId>
+                <artifactId>xodus-entity-store</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+                <scope>compile</scope>
             </dependency>
-
 
         </dependencies>
 
@@ -316,8 +316,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
+            <groupId>org.jetbrains.xodus</groupId>
+            <artifactId>xodus-entity-store</artifactId>
         </dependency>
 
     </dependencies>

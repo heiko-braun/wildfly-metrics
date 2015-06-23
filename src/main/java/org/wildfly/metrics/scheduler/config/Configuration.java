@@ -28,7 +28,7 @@ import java.util.List;
 public interface Configuration {
 
     public enum Diagnostics {STORAGE, CONSOLE};
-    public enum Storage {RHQ, INFLUX, H2}
+    public enum Storage {RHQ, INFLUX, LOCAL}
 
     /**
      * The host controller host.
