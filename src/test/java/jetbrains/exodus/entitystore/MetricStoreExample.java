@@ -25,7 +25,6 @@ public class MetricStoreExample {
     public static final String SAMPLE_NAME = "measurement";
 
     public static void main(String[] args) {
-        final ClassLoader classLoader = MetricStoreExample.class.getClassLoader();
 
         //Create or open persistent store under directory "data"
         final PersistentEntityStoreImpl store = PersistentEntityStores.newInstance("data");
