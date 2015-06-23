@@ -24,6 +24,7 @@ import jetbrains.exodus.entitystore.EntityId;
 import jetbrains.exodus.entitystore.EntityIterable;
 import jetbrains.exodus.entitystore.PersistentEntityStoreImpl;
 import jetbrains.exodus.entitystore.PersistentEntityStores;
+import jetbrains.exodus.entitystore.PersistentStoreTransaction;
 import jetbrains.exodus.entitystore.StoreTransaction;
 import jetbrains.exodus.entitystore.StoreTransactionalComputable;
 import jetbrains.exodus.entitystore.StoreTransactionalExecutable;
@@ -41,16 +42,20 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * A set of test that demonstrated how to use the xodus API to cover the metrics use cases.
  * @author Heiko Braun
  * @since 23/06/15
  */
 public class LogStoreTest {
 
-    public static final String METRIC_NAME = "jvm.heap.size";
-    public static final String SAMPLE_NAME = "measurement";
+    public static final String TYPE_HEAP = "jvm.heap.size";
+    public static final String TYPE_THREADS = "jvm.threads.size";
+    public static final String TYPE_MEASUREMENT = "measurement";
+    private static final String LINK_SAMPLES = "samples";
 
     private PersistentEntityStoreImpl store;
-    private EntityId metricId;
+    private EntityId threadMetrics;
+    private EntityId heapMetrics;
 
     static DateTimeFormatter FMT= DateTimeFormat.forPattern("MM/dd/yyyy HH:mm:ss");
 
@@ -69,12 +74,11 @@ public class LogStoreTest {
 
         System.out.println("Data dir: " + dataDir);
 
-        // Create new metric and link samples
-        metricId = store.computeInTransaction(
+        heapMetrics = store.computeInTransaction(
                 new StoreTransactionalComputable<EntityId>() {
                     @Override
                     public EntityId compute(@NotNull StoreTransaction txn) {
-                        final Entity metric = txn.newEntity(METRIC_NAME);
+                        final Entity metric = txn.newEntity(TYPE_HEAP);
                         metric.setProperty("name", "JVM heap size in mb");
                         return metric.getId();
 
@@ -82,16 +86,38 @@ public class LogStoreTest {
                 }
         );
 
+        threadMetrics = store.computeInTransaction(
+                new StoreTransactionalComputable<EntityId>() {
+                    @Override
+                    public EntityId compute(@NotNull StoreTransaction txn) {
+                        final Entity metric = txn.newEntity(TYPE_THREADS);
+                        metric.setProperty("name", "JVM thread usage");
+                        return metric.getId();
+                    }
+                }
+        );
     }
 
     @After
     public void cleanup() throws Exception {
+
+        store.executeInTransaction(new StoreTransactionalExecutable() {
+            @Override
+            public void execute(@NotNull StoreTransaction txn) {
+                txn.getEntity(heapMetrics).delete();
+                txn.getEntity(threadMetrics).delete();
+            }
+        });
+
+
         if(store!=null)
             store.close();
     }
 
     /**
      * Insert N samples and make sure they can be read again.
+     *
+     * Demonstrate some of the navigability constraints imposed by the way the link are created.
      */
     @Test
     public void testReadWrite() {
@@ -103,10 +129,10 @@ public class LogStoreTest {
                 new StoreTransactionalExecutable() {
                     @Override
                     public void execute(@NotNull StoreTransaction txn) {
-                        Entity metric = txn.getEntity(metricId);
+                        Entity metric = txn.getEntity(heapMetrics);
                         List<Entity> timeSeries = createTimeSeries(txn, NUM_RECORDS);
                         for (Entity entry : timeSeries) {
-                            metric.addLink("samples", entry);
+                            entry.addLink(LINK_SAMPLES, metric);  // sample linked to metric
                         }
                     }
                 }
@@ -117,8 +143,8 @@ public class LogStoreTest {
                 new StoreTransactionalExecutable() {
                     @Override
                     public void execute(@NotNull StoreTransaction txn) {
-                        Entity metric = txn.getEntity(metricId);
-                        final Iterable<Entity> samples = metric.getLinks("samples");
+                        Entity metric = txn.getEntity(heapMetrics);
+                        final Iterable<Entity> samples = txn.findLinks(TYPE_MEASUREMENT, metric, LINK_SAMPLES);
 
                         int i=0;
                         for (Entity sample : samples) {
@@ -134,19 +160,40 @@ public class LogStoreTest {
 
     }
 
+    /**
+     * Insert N metric and read a slice of the full data set.
+     *
+     * This example uses measurement linked to several metric types. The test however should verify
+     * that only the measurement for a specific type are considered when executing the slice query.
+     */
     @Test
     public void testSlices() {
 
         final int PAST_SECONDS = 60; // 60 seconds backwards
 
+        // heap metrics
         store.executeInTransaction(
                 new StoreTransactionalExecutable() {
                     @Override
                     public void execute(@NotNull StoreTransaction txn) {
-                        Entity metric = txn.getEntity(metricId);
+                        Entity metric = txn.getEntity(heapMetrics);
                         List<Entity> timeSeries = createTimeSeries(txn, PAST_SECONDS);
                         for (Entity entry : timeSeries) {
-                            metric.addLink("samples", entry);
+                            entry.addLink(LINK_SAMPLES, metric);
+                        }
+                    }
+                }
+        );
+
+        // thread metrics
+        store.executeInTransaction(
+                new StoreTransactionalExecutable() {
+                    @Override
+                    public void execute(@NotNull StoreTransaction txn) {
+                        Entity metric = txn.getEntity(threadMetrics);
+                        List<Entity> timeSeries = createTimeSeries(txn, PAST_SECONDS*2);
+                        for (Entity entry : timeSeries) {
+                            entry.addLink(LINK_SAMPLES, metric);
                         }
                     }
                 }
@@ -158,17 +205,24 @@ public class LogStoreTest {
         final DateTime to = dt.minusSeconds(15);
 
         // read the previously created sample
-        store.executeInTransaction(
+        store.executeInReadonlyTransaction(
                 new StoreTransactionalExecutable() {
                     @Override
                     public void execute(@NotNull StoreTransaction txn) {
-                        Entity metric = txn.getEntity(metricId);
-                        //Entity samples = metric.getLink(SAMPLE_NAME);
+                        Entity metric = txn.getEntity(heapMetrics);
 
-                        EntityIterable slice = txn.find(SAMPLE_NAME, "timestamp", from.getMillis(), to.getMillis());
+                        // the number of samples per type needs to match
+                        EntityIterable linkedSamples = txn.findLinks(TYPE_MEASUREMENT, metric, LINK_SAMPLES);
+                        Assert.assertEquals("Num samples needs to match", PAST_SECONDS, linkedSamples.size());
 
-                        int i=0;
-                        for (Entity sample : slice) {
+                        // within range
+                        EntityIterable slice = txn.find(TYPE_MEASUREMENT, "timestamp", from.getMillis(), to.getMillis());
+
+                        // TODO: intersection is currently the only way I know of to this.
+                        // But it would be much better only load the link types needed.
+
+                        int i = 0;
+                        for (Entity sample : slice.intersect(linkedSamples)) {
                             printSample(sample);
                             i++;
                         }
@@ -206,10 +260,10 @@ public class LogStoreTest {
         System.out.println("\tValue: " + item.getProperty("value"));
     }
 
-    private static Entity createNewSample(StoreTransaction txn, long timestamp, int heap) {
-        final Entity sample = txn.newEntity(SAMPLE_NAME);
+    private static Entity createNewSample(StoreTransaction txn, long timestamp, int value) {
+        final Entity sample = txn.newEntity(TYPE_MEASUREMENT);
         sample.setProperty("timestamp", timestamp);
-        sample.setProperty("value", heap);
+        sample.setProperty("value", value);
         return sample;
     }
 }
