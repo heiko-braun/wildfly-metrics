@@ -21,26 +21,32 @@ package org.wildfly.metrics.server;
 
 import io.undertow.Undertow;
 import io.undertow.util.Headers;
-import jetbrains.exodus.entitystore.Entity;
-import jetbrains.exodus.entitystore.EntityId;
-import jetbrains.exodus.entitystore.StoreTransaction;
-import jetbrains.exodus.entitystore.StoreTransactionalComputable;
 import org.jetbrains.annotations.NotNull;
+import org.wildfly.metrics.storage.FS;
+import org.wildfly.metrics.storage.MetricStorage;
 
+import java.io.File;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static io.undertow.Handlers.path;
 
 /**
- * Simple HTTP server for load test purposes
+ * Simple HTTP server to run load tests
  *
  * @author Heiko Braun
  * @since 24/06/15
  */
 public class Server {
 
+    private final String dataDir;
+    private final MetricStorage storage;
+
     public Server() {
+        dataDir = genStorageName();
+        storage = new MetricStorage(dataDir);
 
     }
 
@@ -64,11 +70,16 @@ public class Server {
                                 .addPrefixPath("/api/get", exchange -> {
                                     Map<String, Deque<String>> params = exchange.getQueryParameters();
 
-                                    server.readMetric(
-                                            params.get("metric").getFirst(),
-                                            Long.valueOf(params.get("from").getFirst()),
-                                            Long.valueOf(params.get("to").getFirst())
+                                    List<Long[]> values = server.readMetric(
+                                            params.get("metric").getFirst()
                                     );
+
+                                    StringBuffer sb = new StringBuffer();
+                                    values.forEach( t -> {
+                                        sb.append(t[0]).append(",").append(t[1]).append("\n");
+                                    });
+                                    exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+                                    exchange.getResponseSender().send(sb.toString());
                                 })
 
                                 .addPrefixPath("/", exchange -> {
@@ -88,18 +99,33 @@ public class Server {
     }
 
     private void start() {
-        System.out.println("Start server");
+        System.out.println("Starting server");
+        System.out.println("DataDir: "+ dataDir);
     }
 
     private void stop() {
-        System.out.println("Stop server");
-    }
-
-    private void readMetric(String metric, long from, long to) {
+        try {
+            FS.removeDir(dataDir);
+            System.out.println("Stopped server");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void writeMetric(String metric, Long value) {
-        System.out.println("Insert "+metric +" > " + value);
+        if(!storage.getMetricNames().contains(metric))
+            storage.registerMetric(metric);
+        storage.addMeasurement(metric, System.currentTimeMillis(), value);
+    }
 
+    private List<Long[]> readMetric(String metric) {
+        long now = System.currentTimeMillis();
+        return storage.getMeasurements(metric, 0, now);
+    }
+
+    @NotNull
+    private static String genStorageName() {
+        String tmpdir = System.getProperty("java.io.tmpdir");
+        return tmpdir + File.pathSeparator + "metrics-data-"+ UUID.randomUUID().toString();
     }
 }

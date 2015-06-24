@@ -33,6 +33,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
+ * Each test run creates a dedicated logstore instance (file system)
+ * and retains it through a run. It will be nuked at the end of the overall test execution.
+ *
+ * This means you can rely on entities being created through the test,
+ * but at the same time you have to be aware of possible conflicts that may occur.
+ *
  * @author Heiko Braun
  * @since 24/06/15
  */
@@ -45,6 +51,7 @@ public class MetricStoreTest {
     public static void init() {
         dataDir = genStorageName();
         storage = new MetricStorage(dataDir);
+        System.out.println("DataDir: "+dataDir);
     }
 
     @AfterClass

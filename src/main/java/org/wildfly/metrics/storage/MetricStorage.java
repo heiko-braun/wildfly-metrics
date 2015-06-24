@@ -51,8 +51,6 @@ public class MetricStorage {
                 dataDir
         );
 
-        System.out.println("Data dir: " + dataDir);
-
         createSchema();
     }
 
