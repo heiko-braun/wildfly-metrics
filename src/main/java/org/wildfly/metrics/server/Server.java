@@ -74,12 +74,16 @@ public class Server {
                                             params.get("metric").getFirst()
                                     );
 
-                                    StringBuffer sb = new StringBuffer();
-                                    values.forEach( t -> {
-                                        sb.append(t[0]).append(",").append(t[1]).append("\n");
-                                    });
-                                    exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
-                                    exchange.getResponseSender().send(sb.toString());
+                                    // nduge disables the response being written
+                                    // useful within the context of a load test
+                                    if (!params.keySet().contains("nudge")) {
+                                        StringBuffer sb = new StringBuffer();
+                                        values.forEach(t -> {
+                                            sb.append(t[0]).append(",").append(t[1]).append("\n");
+                                        });
+                                        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+                                        exchange.getResponseSender().send(sb.toString());
+                                    }
                                 })
 
                                 .addPrefixPath("/", exchange -> {
