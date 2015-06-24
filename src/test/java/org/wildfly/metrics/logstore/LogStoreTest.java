@@ -161,10 +161,48 @@ public class LogStoreTest {
     }
 
     /**
+     * Link impose a navigability constraint as demonstrated below.
+     */
+    @Test
+    public void testNavigability() {
+
+        store.executeInTransaction(
+                new StoreTransactionalExecutable() {
+                    @Override
+                    public void execute(@NotNull StoreTransaction txn) {
+                        Entity metric = txn.getEntity(heapMetrics);
+                        Entity measurement = createNewSample(txn, System.currentTimeMillis(), 0);
+
+                        // this link does resolve when using txn.findLink() further down
+                        metric.addLink("relates-to", measurement);
+
+                        // this one however does
+                        measurement.addLink("relates-to", metric);
+                    }
+                }
+        );
+
+        store.executeInTransaction(
+                new StoreTransactionalExecutable() {
+                    @Override
+                    public void execute(@NotNull StoreTransaction txn) {
+                        Entity metric = txn.getEntity(heapMetrics);
+                        EntityIterable result = txn.findLinks(TYPE_HEAP, metric, "relates-to");
+                        Assert.assertEquals("Expected no links from metric to measurement", 0, result.size());
+
+                        EntityIterable result2 = txn.findLinks(TYPE_MEASUREMENT, metric, "relates-to");
+                        Assert.assertEquals("Expected links from measurement to metric", 1, result2.size());
+                    }
+                }
+        );
+
+    }
+
+    /**
      * Insert N metric and read a slice of the full data set.
      *
-     * This example uses measurement linked to several metric types. The test however should verify
-     * that only the measurement for a specific type are considered when executing the slice query.
+     * This example uses measurement linked to several metric types. The test should verify
+     * that only the measurement for a specific metric type is considered when executing the slice query.
      */
     @Test
     public void testSlices() {
@@ -218,7 +256,7 @@ public class LogStoreTest {
                         // within range
                         EntityIterable slice = txn.find(TYPE_MEASUREMENT, "timestamp", from.getMillis(), to.getMillis());
 
-                        // TODO: intersection is currently the only way I know of to this.
+                        // TODO: intersection is currently the only way I know of
                         // But it would be much better only load the link types needed.
 
                         int i = 0;
