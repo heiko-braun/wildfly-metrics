@@ -24,6 +24,9 @@ import jetbrains.exodus.entitystore.EntityId;
 import jetbrains.exodus.entitystore.EntityIterable;
 import jetbrains.exodus.entitystore.PersistentEntityStoreImpl;
 import jetbrains.exodus.entitystore.PersistentEntityStores;
+import jetbrains.exodus.env.Environment;
+import jetbrains.exodus.env.EnvironmentConfig;
+import jetbrains.exodus.env.Environments;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -47,14 +50,14 @@ public class MetricStorage {
 
     public MetricStorage(String dataDir) {
 
-        store = PersistentEntityStores.newInstance(
-                dataDir
-        );
+        EnvironmentConfig config = new EnvironmentConfig();
+        config.setManagementEnabled(false); //disable jmx
+        Environment environment = Environments.newContextualInstance(dataDir, config);
+
+        store = PersistentEntityStores.newInstance(environment);
 
         createSchema();
     }
-
-
 
     private void createSchema() {
 
@@ -140,11 +143,9 @@ public class MetricStorage {
         );
     }
 
-
-
     public List<Long[]> getMeasurements(String metricName, long from, long to) {
         List<Long[]> results = new LinkedList<>();
-        store.executeInTransaction(
+        store.executeInReadonlyTransaction(
                 txn -> {
 
                     Entity metric = txn.find(TYPE_METRIC_KEY, "name", metricName).getFirst();
@@ -153,9 +154,9 @@ public class MetricStorage {
                     // within range
                     EntityIterable slice = txn.find(TYPE_MEASUREMENT, "timestamp", from, to);
 
-                    slice.intersect(links).forEach( entity -> {
+                    slice.intersect(links).forEach(entity -> {
                         Long[] tuple = new Long[2];
-                        tuple[0] = (Long)entity.getProperty("timestamp");
+                        tuple[0] = (Long) entity.getProperty("timestamp");
                         tuple[1] = (Long)entity.getProperty("value");
                         results.add(tuple);
                     } );
