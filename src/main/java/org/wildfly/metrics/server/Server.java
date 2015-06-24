@@ -20,8 +20,10 @@
 package org.wildfly.metrics.server;
 
 import io.undertow.Undertow;
+import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.jetbrains.annotations.NotNull;
+import org.joda.time.DateTime;
 import org.wildfly.metrics.storage.FS;
 import org.wildfly.metrics.storage.MetricStorage;
 
@@ -47,7 +49,6 @@ public class Server {
     public Server() {
         dataDir = genStorageName();
         storage = new MetricStorage(dataDir);
-
     }
 
     public static void main(String[] args) throws Exception
@@ -70,20 +71,75 @@ public class Server {
                                 .addPrefixPath("/api/get", exchange -> {
                                     Map<String, Deque<String>> params = exchange.getQueryParameters();
 
-                                    List<Long[]> values = server.readMetric(
-                                            params.get("metric").getFirst()
+                                    List<Long[]> values = server.readSlice(
+                                            params.get("metric").getFirst(),
+                                            () -> {
+                                                return new long[]{0, System.currentTimeMillis()};
+                                            }
                                     );
 
-                                    // nduge disables the response being written
-                                    // useful within the context of a load test
-                                    if (!params.keySet().contains("nudge")) {
-                                        StringBuffer sb = new StringBuffer();
-                                        values.forEach(t -> {
-                                            sb.append(t[0]).append(",").append(t[1]).append("\n");
-                                        });
-                                        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
-                                        exchange.getResponseSender().send(sb.toString());
-                                    }
+                                    payload(exchange, params, values);
+
+                                })
+
+                                .addPrefixPath("/api/get15s", exchange -> {
+                                    Map<String, Deque<String>> params = exchange.getQueryParameters();
+
+                                    List<Long[]> values = server.readSlice(
+                                            params.get("metric").getFirst(),
+                                            () -> {
+                                                DateTime dt = new DateTime();
+                                                DateTime offset = dt.minusSeconds(15);
+                                                return new long[]{offset.getMillis(), System.currentTimeMillis()};
+                                            }
+                                    );
+
+                                    payload(exchange, params, values);
+                                })
+
+                                .addPrefixPath("/api/get30s", exchange -> {
+                                    Map<String, Deque<String>> params = exchange.getQueryParameters();
+
+                                    List<Long[]> values = server.readSlice(
+                                            params.get("metric").getFirst(),
+                                            () -> {
+                                                DateTime dt = new DateTime();
+                                                DateTime offset = dt.minusSeconds(30);
+                                                return new long[]{offset.getMillis(), System.currentTimeMillis()};
+                                            }
+                                    );
+
+                                    payload(exchange, params, values);
+                                })
+
+                                .addPrefixPath("/api/get1m", exchange -> {
+                                    Map<String, Deque<String>> params = exchange.getQueryParameters();
+
+                                    List<Long[]> values = server.readSlice(
+                                            params.get("metric").getFirst(),
+                                            () -> {
+                                                DateTime dt = new DateTime();
+                                                DateTime offset = dt.minusMinutes(1);
+                                                return new long[]{offset.getMillis(), System.currentTimeMillis()};
+                                            }
+                                    );
+
+                                    payload(exchange, params, values);
+                                })
+
+                                .addPrefixPath("/api/get1h", exchange -> {
+                                    Map<String, Deque<String>> params = exchange.getQueryParameters();
+
+                                    List<Long[]> values = server.readSlice(
+                                            params.get("metric").getFirst(),
+                                            () -> {
+                                                DateTime dt = new DateTime();
+                                                DateTime offset = dt.minusHours(1);
+                                                return new long[]{offset.getMillis(), System.currentTimeMillis()};
+                                            }
+                                    );
+
+                                    payload(exchange, params, values);
                                 })
 
                                 .addPrefixPath("/", exchange -> {
@@ -100,6 +156,28 @@ public class Server {
 
         http.stop();
         server.stop();
+    }
+
+    private static void payload(HttpServerExchange exchange, Map<String, Deque<String>> params, List<Long[]> values) {
+        // nudge disables the response being written
+        // useful within the context of a load test
+        if (!params.keySet().contains("nudge")) {
+            StringBuffer sb = new StringBuffer();
+            values.forEach(t -> {
+                sb.append(t[0]).append(",").append(t[1]).append("\n");
+            });
+            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+            exchange.getResponseSender().send(sb.toString());
+        }
+    }
+
+    private List<Long[]> readSlice(String name, Slice slice) {
+        long[] tuple = slice.get();
+        return readMetric(name, tuple[0], tuple[1]);
+    }
+
+    interface Slice {
+        long[] get();
     }
 
     private void start() {
@@ -125,6 +203,10 @@ public class Server {
     private List<Long[]> readMetric(String metric) {
         long now = System.currentTimeMillis();
         return storage.getMeasurements(metric, 0, now);
+    }
+
+    private List<Long[]> readMetric(String metric, long from, long to) {
+        return storage.getMeasurements(metric, from, to);
     }
 
     @NotNull
