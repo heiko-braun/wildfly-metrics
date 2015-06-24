@@ -21,6 +21,11 @@ package org.wildfly.metrics.server;
 
 import io.undertow.Undertow;
 import io.undertow.util.Headers;
+import jetbrains.exodus.entitystore.Entity;
+import jetbrains.exodus.entitystore.EntityId;
+import jetbrains.exodus.entitystore.StoreTransaction;
+import jetbrains.exodus.entitystore.StoreTransactionalComputable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Deque;
 import java.util.Map;
@@ -34,33 +39,67 @@ import static io.undertow.Handlers.path;
  * @since 24/06/15
  */
 public class Server {
-    public static void main(String[] args)
-    {
 
-        Undertow server = Undertow.builder()
+    public Server() {
+
+    }
+
+    public static void main(String[] args) throws Exception
+    {
+        final Server server = new Server();
+
+        Undertow http = Undertow.builder()
                 .addHttpListener(4444, "localhost")
                 .setHandler(
                         path()
-
                                 .addPrefixPath("/api/put", exchange -> {
                                     Map<String, Deque<String>> params = exchange.getQueryParameters();
-                                    insertMetric(
+
+                                    server.writeMetric(
                                             params.get("metric").getFirst(),
                                             Long.valueOf(params.get("value").getFirst())
                                     );
                                 })
 
-                                // default web root
+                                .addPrefixPath("/api/get", exchange -> {
+                                    Map<String, Deque<String>> params = exchange.getQueryParameters();
+
+                                    server.readMetric(
+                                            params.get("metric").getFirst(),
+                                            Long.valueOf(params.get("from").getFirst()),
+                                            Long.valueOf(params.get("to").getFirst())
+                                    );
+                                })
+
                                 .addPrefixPath("/", exchange -> {
                                     exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
-                                    exchange.getResponseSender().send("Metric Server for testing purposes");
+                                    exchange.getResponseSender().send("Metric Server");
                                 })
                 ).build();
 
         server.start();
+        http.start();
+
+        System.out.println("Press enter to exit ...");
+        System.in.read();
+
+        http.stop();
+        server.stop();
     }
 
-    private static void insertMetric(String metric, Long value) {
+    private void start() {
+        System.out.println("Start server");
+    }
+
+    private void stop() {
+        System.out.println("Stop server");
+    }
+
+    private void readMetric(String metric, long from, long to) {
+    }
+
+    private void writeMetric(String metric, Long value) {
+        System.out.println("Insert "+metric +" > " + value);
 
     }
 }
