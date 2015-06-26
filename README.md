@@ -1,7 +1,8 @@
 # WildFly Metrics
 
-This is a module to be deployed into WildFlyAS and which then takes
-measurements from the WildFly model and sends them to a persistent storage
+A self contained ^1 monitoring solution that keeps track of historical runtime data.
+
+1. Can be used out-of-the-box, without any external dependencies.
 
 ## Prerequisites
 
@@ -72,10 +73,9 @@ The monitor-module.zip server profiles for both standalone and domain mode that 
 ./bin/domain.sh --domain-config=monitor-domain.xml --host-config=monitor-host.xml -b 127.0.0.1
 ```
 
-
 ## Get In touch
 
-The best way to reach out and discuss the monitor subsystem is the RHQ  mailing list and/or the Chat Room:
+The best way to reach out and discuss the monitor subsystem is the Wildfly mailing list and/or the Chat Room:
 
 * Mailing List: https://lists.jboss.org/mailman/listinfo/wildfly-dev
 * IRC: irc://freenode.org/#wildfly
