@@ -20,7 +20,13 @@ Build the top level project:
 $ mvn clean install
 ----
 
-This will also create a monitor-module.zip, that can be installed on Wildfly:
+Move to the monitor module
+
+----
+$ cd monitor
+----
+
+A a monitor-module.zip has been build, that can be installed on Wildfly:
 
 `unzip target/monitor-module.zip -d $WILDFLY_HOME`
 
