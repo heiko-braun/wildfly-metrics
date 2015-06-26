@@ -18,181 +18,105 @@
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>storage-benchmarks</name>
+    <name>Benchmarks</name>
 
     <groupId>org.wildfly.metrics.test</groupId>
     <artifactId>benchmarks</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <!-- <parent>
-         <groupId>org.wildfly.metrics</groupId>
-         <artifactId>monitor</artifactId>
-         <version>1.0.0-SNAPSHOT</version>
-         <relativePath>../pom.xml</relativePath>
-     </parent>-->
+    <parent>
+        <groupId>org.wildfly.metrics</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
-    <properties>
-        <junit.version>4.11</junit.version>
-        <japex.version>1.2.4</japex.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
     <dependencies>
 
         <dependency>
             <groupId>org.wildfly.metrics</groupId>
             <artifactId>monitor</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>com.sun.japex</groupId>
             <artifactId>japex</artifactId>
-            <version>${japex.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.8.1</version>
         </dependency>
 
     </dependencies>
 
-    <repositories>
-        <!-- Conventions are described in http://community.jboss.org/wiki/MavenGettingStarted-Developers -->
-        <repository>
-            <id>jboss-public-repository-group</id>
-            <name>JBoss Public Repository Group</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>jboss-public-repository-group</id>
-            <name>JBoss Public Repository Group</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
+    <profiles>
+        <profile>
+            <id>benchmarks</id>
 
-    <build>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.sun.japex</groupId>
+                        <artifactId>japex-maven-plugin</artifactId>
+                        <version>${japex.version}</version>
+                        <executions>
+                            <execution>
+                                <id>japex</id>
+                                <goals><goal>japex</goal></goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <japexConfig>
+                                <testSuite name="ParsingPerformance" xmlns="http://www.sun.com/japex/testSuite">
+                                    <param name="japex.namedClassPath" value="maven.test.classpath"/>
+                                    <param name="japex.resultUnit" value="ms"/>
+                                    <param name="japex.warmupIterations" value="50"/>
+                                    <param name="japex.runIterations" value="500"/>
 
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                    <showDeprecation>false</showDeprecation>
-                    <showWarnings>true</showWarnings>
-                    <optimize>true</optimize>
-                    <compilerArgument>-proc:none</compilerArgument>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>jar</goal>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skipTests>true</skipTests>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.sun.japex</groupId>
-                <artifactId>japex-maven-plugin</artifactId>
-                <version>${japex.version}</version>
-                <executions>
-                    <execution>
-                        <id>japex</id>
-                        <goals><goal>japex</goal></goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <japexConfig>
-                        <testSuite name="ParsingPerformance" xmlns="http://www.sun.com/japex/testSuite">
-                            <param name="japex.namedClassPath" value="maven.test.classpath"/>
-                            <param name="japex.resultUnit" value="ms"/>
-                            <param name="japex.warmupIterations" value="50"/>
-                            <param name="japex.runIterations" value="500"/>
+                                    <!-- Tests -->
+                                    <driver name="Last N samples">
+                                        <param name="japex.driverClass" value="org.wildfly.metrics.BatchOffset"/>
+                                        <param name="description" value="Read performance by window size"/>
+                                    </driver>
+                                    <driver name="Window Positions">
+                                        <param name="japex.driverClass" value="org.wildfly.metrics.BatchWindow"/>
+                                        <param name="description" value="Read performance by window position"/>
+                                    </driver>
 
-                            <!-- Tests -->
-                            <driver name="Last N samples">
-                                <param name="japex.driverClass" value="org.wildfly.metrics.BatchOffset"/>
-                                <param name="description" value="Read performance by window size"/>
-                            </driver>
-                            <driver name="Window Positions">
-                                <param name="japex.driverClass" value="org.wildfly.metrics.BatchWindow"/>
-                                <param name="description" value="Read performance by window position"/>
-                            </driver>
+                                    <!-- Test Parameter -->
+                                    <testCase name="5 min window">
+                                        <param name="time.window" value="m5"/>
+                                    </testCase>
+                                    <testCase name="20 min window">
+                                        <param name="time.window" value="m30"/>
+                                    </testCase>
+                                    <testCase name="2 hour window">
+                                        <param name="time.window" value="h2"/>
+                                    </testCase>
+                                    <testCase name="6 hour window">
+                                        <param name="time.window" value="h6"/>
+                                    </testCase>
+                                    <testCase name="2 days">
+                                        <param name="time.window" value="h48"/>
+                                    </testCase>
+                                </testSuite>
+                            </japexConfig>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
-                            <!-- Test Parameter -->
-                            <testCase name="5 min window">
-                                <param name="time.window" value="m5"/>
-                            </testCase>
-                            <testCase name="20 min window">
-                                <param name="time.window" value="m30"/>
-                            </testCase>
-                            <testCase name="2 hour window">
-                                <param name="time.window" value="h2"/>
-                            </testCase>
-                            <testCase name="6 hour window">
-                                <param name="time.window" value="h6"/>
-                            </testCase>
-                            <testCase name="2 days">
-                                <param name="time.window" value="h48"/>
-                            </testCase>
-                        </testSuite>
-                    </japexConfig>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-
-    <distributionManagement>
-        <repository>
-            <id>jboss-releases-repository</id>
-            <name>JBoss Releases Repository</name>
-            <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
-        </repository>
-        <snapshotRepository>
-            <id>jboss-snapshots-repository</id>
-            <name>JBoss Snapshots Repository</name>
-            <url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
 </project>
