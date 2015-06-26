@@ -14,12 +14,14 @@
 <div class='row main-windows'>
     <div class='data col-xs-2'>
         <textarea rows="20" cols="60">
-            [
-            {"ms":1435341327613,"heap":132},
-            {"ms":1435341330707,"heap":312},
-            {"ms":1435341331337,"heap":124},
-            {"ms":1435341331930,"heap":100},
-            {"ms":1435341332410,"heap":256}
+            [{"ms":1435350528083,"val":213},
+            {"ms":1435350528137,"val":256},
+            {"ms":1435350529214,"val":160},
+            {"ms":1435350529430,"val":120},
+            {"ms":1435350529606,"val":400},
+            {"ms":1435350529775,"val":350},
+            {"ms":1435350529895,"val":256},
+            {"ms":1435350530063,"val":270}
             ]
         </textarea>
     </div>
@@ -29,7 +31,7 @@
 
 <script type="text/javascript">
 
-    samples = JSON.parse($('.data textarea').val());
+   /* samples = JSON.parse($('.data textarea').val());
     samples.forEach(function(d) { d.ms = new Date(d.ms); });
 
     MG.data_graphic({
@@ -40,10 +42,26 @@
         height: 250,
         target: ".result",
         x_accessor: "ms",
-        y_accessor: "heap",
+        y_accessor: "val",
         interpolate: "linear"
-    });
+    });*/
 
+    d3.json('http://localhost:4444/api/get?metric=heap',
+            function(data) {
+                data.forEach(function(d) { d.ms = new Date(d.ms); });
+                MG.data_graphic({
+                    title: "JVM Heap",
+                    description: "Heap usage in mb",
+                    data: data,
+                    width: 400,
+                    height: 250,
+                    target: ".result",
+                    x_accessor: "ms",
+                    y_accessor: "val",
+                    interpolate: "linear"
+                });
+            }
+    );
 </script>
 </body>
 <html>
