@@ -40,6 +40,7 @@ import org.junit.Test;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A set of test that demonstrated how to use the xodus API to cover the metrics use cases.
@@ -66,7 +67,7 @@ public class LogStoreTest {
     @Before
     public void initializeStore() {
         String tmpdir = System.getProperty("java.io.tmpdir");
-        String dataDir = tmpdir + File.pathSeparator + "metrics-data";
+        String dataDir = tmpdir + File.pathSeparator + "metrics-data-"+ UUID.randomUUID().toString();
 
         store = PersistentEntityStores.newInstance(
                 dataDir
