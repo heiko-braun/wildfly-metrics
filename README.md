@@ -1,6 +1,6 @@
 # WildFly Metrics
 
-A self contained ^1 monitoring solution that keeps track of historical runtime data.
+A self contained [1] monitoring solution that keeps track of historical runtime data.
 
 1. Can be used out-of-the-box, without any external dependencies.
 
