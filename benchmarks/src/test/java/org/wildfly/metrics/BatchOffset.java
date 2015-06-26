@@ -1,38 +1,27 @@
 package org.wildfly.metrics;
 
 import com.sun.japex.Constants;
-import com.sun.japex.JapexDriverBase;
 import com.sun.japex.TestCase;
 import org.joda.time.DateTime;
-import org.wildfly.metrics.storage.FS;
-import org.wildfly.metrics.storage.MetricStorage;
 
-import java.io.File;
-import java.util.UUID;
+import java.util.List;
 
 /**
  * @author Heiko Braun
  * @since 20/02/15
  */
-public class BatchOffset extends JapexDriverBase {
+public class BatchOffset extends BenchmarkBase {
 
 
     private DateTime offset;
-    private String dataDir;
-    private MetricStorage storage;
-
-    @Override
-    public void initializeDriver() {
-        dataDir = genStorageName();
-        storage = new MetricStorage(dataDir);
-        System.out.println("DataDir: " + dataDir);
-    }
+    private long now;
 
     @Override
     public void prepare(TestCase testCase) {
 
-        String sizeParam= testCase.getParam("batch.size");
+        String sizeParam= testCase.getParam("time.window");
         offset = new DateTime();
+        now = System.currentTimeMillis();
         Integer n = Integer.valueOf(sizeParam.substring(1, sizeParam.length()));
         switch (sizeParam.charAt(0))
         {
@@ -47,6 +36,16 @@ public class BatchOffset extends JapexDriverBase {
                 break;
         }
 
+        // the database needs some time to normalise ...
+        try {
+            System.out.println("Linger ...");
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Begin test executions ...");
+
     }
 
     @Override
@@ -54,23 +53,9 @@ public class BatchOffset extends JapexDriverBase {
         super.run(testCase);
 
         long start = System.currentTimeMillis();
-
-
-        //setLongParam(Constants.RESULT_VALUE, data.length);
-        setLongParam(Constants.RESULT_TIME, System.currentTimeMillis()-start);
+        List<Long[]> measurements = storage.getMeasurements(TestData.METRIC_NAME, offset.getMillis(), now);
+        setLongParam("NumSamples_"+testCase.getParam("time.window"), measurements.size());
+        setLongParam(Constants.RESULT_TIME,  System.currentTimeMillis() - start);
     }
 
-    private static String genStorageName() {
-        String tmpdir = System.getProperty("java.io.tmpdir");
-        return tmpdir + File.pathSeparator + "metrics-data-"+ UUID.randomUUID().toString();
-    }
-
-    @Override
-    public void terminateDriver() {
-        try {
-            FS.removeDir(dataDir);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

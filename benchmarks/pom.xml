@@ -18,7 +18,7 @@
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>flatbuffer-test</name>
+    <name>storage-benchmarks</name>
 
     <groupId>org.wildfly.metrics.test</groupId>
     <artifactId>benchmarks</artifactId>
@@ -146,20 +146,34 @@
                         <testSuite name="ParsingPerformance" xmlns="http://www.sun.com/japex/testSuite">
                             <param name="japex.namedClassPath" value="maven.test.classpath"/>
                             <param name="japex.resultUnit" value="ms"/>
-                            <param name="japex.warmupIterations" value="500"/>
-                            <param name="japex.runIterations" value="1000"/>
-                            <driver name="Batch Offset">
+                            <param name="japex.warmupIterations" value="50"/>
+                            <param name="japex.runIterations" value="500"/>
+
+                            <!-- Tests -->
+                            <driver name="Last N samples">
                                 <param name="japex.driverClass" value="org.wildfly.metrics.BatchOffset"/>
-                                <param name="description" value="Flatbuffer write performance"/>
+                                <param name="description" value="Read performance by window size"/>
                             </driver>
-                            <testCase name="test-one">
-                                <param name="batch.size" value="s15"/>
+                            <driver name="Window Positions">
+                                <param name="japex.driverClass" value="org.wildfly.metrics.BatchWindow"/>
+                                <param name="description" value="Read performance by window position"/>
+                            </driver>
+
+                            <!-- Test Parameter -->
+                            <testCase name="5 min window">
+                                <param name="time.window" value="m5"/>
                             </testCase>
-                            <testCase name="test-two">
-                                <param name="batch.size" value="m1"/>
+                            <testCase name="20 min window">
+                                <param name="time.window" value="m30"/>
                             </testCase>
-                            <testCase name="test-three">
-                                <param name="batch.size" value="h2"/>
+                            <testCase name="2 hour window">
+                                <param name="time.window" value="h2"/>
+                            </testCase>
+                            <testCase name="6 hour window">
+                                <param name="time.window" value="h6"/>
+                            </testCase>
+                            <testCase name="2 days">
+                                <param name="time.window" value="h48"/>
                             </testCase>
                         </testSuite>
                     </japexConfig>
