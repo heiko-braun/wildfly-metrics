@@ -163,10 +163,16 @@ public class Server {
         // useful within the context of a load test
         if (!params.keySet().contains("nudge")) {
             StringBuffer sb = new StringBuffer();
+            sb.append("[");
+
             values.forEach(t -> {
-                sb.append(t[0]).append(",").append(t[1]).append("\n");
+                sb.append("{\"ms\":").append(t[0]).append(",");
+                sb.append("\"val\":").append(t[1]);
+                sb.append("},\n");
             });
-            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+            sb.replace(sb.length()-2, sb.length()-1, "");
+            sb.append("]");
+            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
             exchange.getResponseSender().send(sb.toString());
         }
     }
