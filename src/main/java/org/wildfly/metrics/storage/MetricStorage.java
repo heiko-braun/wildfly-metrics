@@ -24,7 +24,6 @@ import jetbrains.exodus.entitystore.EntityId;
 import jetbrains.exodus.entitystore.EntityIterable;
 import jetbrains.exodus.entitystore.PersistentEntityStoreImpl;
 import jetbrains.exodus.entitystore.PersistentEntityStores;
-import jetbrains.exodus.entitystore.StoreTransaction;
 import jetbrains.exodus.env.Environment;
 import jetbrains.exodus.env.EnvironmentConfig;
 import jetbrains.exodus.env.Environments;
@@ -87,16 +86,18 @@ public class MetricStorage {
      */
     public Set<String> getMetricNames() {
 
-        final Set<String> metricsNames = new HashSet<String>();
-        store.executeInReadonlyTransaction(
-                txn -> {
-                    Entity keys = txn.getEntity(keysId);
-                    EntityIterable links = txn.findLinks(TYPE_METRIC_KEY, keys, KEY_TO_KEYS);
-                    links.forEach(
-                            entity -> metricsNames.add((String) entity.getProperty("name"))
-                    );
-                }
-        );
+        final Set<String> metricsNames = store.computeInReadonlyTransaction(txn -> {
+
+            Set<String> res = new HashSet<String>();
+
+            Entity keys = txn.getEntity(keysId);
+            EntityIterable links = txn.findLinks(TYPE_METRIC_KEY, keys, KEY_TO_KEYS);
+            links.forEach(
+                    entity -> res.add((String) entity.getProperty("name"))
+            );
+
+            return res;
+        });
 
         return metricsNames;
     }
@@ -123,6 +124,8 @@ public class MetricStorage {
                     Entity key = txn.newEntity(TYPE_METRIC_KEY);
                     key.setProperty("name", metricName);
                     key.addLink(KEY_TO_KEYS, keys);
+
+                    txn.commit();
                 }
         );
     }
@@ -143,30 +146,31 @@ public class MetricStorage {
                     measurement.setProperty("timestamp", timestamp);
                     measurement.setProperty("value", value);
                     measurement.addLink(MEASUREMENT_TO_METRIC, metric);
+
+                    txn.commit();
                 }
         );
     }
 
     public List<Long[]> getMeasurements(String metricName, long from, long to) {
-        List<Long[]> results = new LinkedList<>();
-        store.executeInReadonlyTransaction(
-                (StoreTransaction txn) -> {
 
-                    Entity metric = txn.find(TYPE_METRIC_KEY, "name", metricName).getFirst();
-                    EntityIterable links = txn.findLinks(TYPE_MEASUREMENT, metric, MEASUREMENT_TO_METRIC);
+        List<Long[]> results = store.computeInReadonlyTransaction(txn -> {
+            Entity metric = txn.find(TYPE_METRIC_KEY, "name", metricName).getFirst();
+            EntityIterable links = txn.findLinks(TYPE_MEASUREMENT, metric, MEASUREMENT_TO_METRIC);
 
-                    // within range
-                    EntityIterable slice = txn.find(TYPE_MEASUREMENT, "timestamp", from, to);
+            // within range
+            EntityIterable slice = txn.find(TYPE_MEASUREMENT, "timestamp", from, to);
 
-                    slice.intersect(links).forEach(entity -> {
-                        Long[] tuple = new Long[2];
-                        tuple[0] = (Long) entity.getProperty("timestamp");
-                        tuple[1] = (Long) entity.getProperty("value");
-                        results.add(tuple);
-                    });
+            List<Long[]> res = new LinkedList<Long[]>();
+            slice.intersect(links).forEach(entity -> {
+                Long[] tuple = new Long[2];
+                tuple[0] = (Long) entity.getProperty("timestamp");
+                tuple[1] = (Long) entity.getProperty("value");
+                res.add(tuple);
+            });
 
-                }
-        );
+            return res;
+        });
 
         return results;
     }
