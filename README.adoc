@@ -20,9 +20,9 @@ Build the top level project:
 $ mvn clean install
 ----
 
-This will also create a wildfly-monitor-module.zip, that can be installed on Wildfly:
+This will also create a monitor-module.zip, that can be installed on Wildfly:
 
-`unzip target/wildfly-monitor-module.zip -d $WILDFLY_HOME`
+`unzip target/monitor-module.zip -d $WILDFLY_HOME`
 
 This will add an additional module that contains the monitor extension and subsystem:
 
@@ -30,7 +30,7 @@ This will add an additional module that contains the monitor extension and subsy
 
 == Package Contents
 
-The following contents will be installed when you unpack the wildfly-monitor-module.zip:
+The following contents will be installed when you unpack the monitor-module.zip:
 
 ....
 modules/system/layers/base/org/wildfly/metrics/wildfly-monitor/main/module.xml (1)
@@ -48,7 +48,7 @@ domain/configuration/monitor-host.xml (5)`
 
 ## Server Configuration Profiles
 
-The wildfly-monitor-module.zip server profiles for both standalone and domain mode that can be used to start a pre-configured Wildfly instance:
+The monitor-module.zip server profiles for both standalone and domain mode that can be used to start a pre-configured Wildfly instance:
 
 ### Standalone Mode
 
