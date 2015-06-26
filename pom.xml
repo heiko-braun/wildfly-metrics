@@ -25,8 +25,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.wildfly.metrics</groupId>
-    <artifactId>wildfly-monitor</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
+    <artifactId>monitor</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
 
     <name>WildFly Monitoring Subsystem</name>
 
