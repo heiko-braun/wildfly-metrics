@@ -31,20 +31,20 @@
 
 <script type="text/javascript">
 
-   /* samples = JSON.parse($('.data textarea').val());
-    samples.forEach(function(d) { d.ms = new Date(d.ms); });
+    /* samples = JSON.parse($('.data textarea').val());
+     samples.forEach(function(d) { d.ms = new Date(d.ms); });
 
-    MG.data_graphic({
-        title: "JVM Heap",
-        description: "Heap usage in mb",
-        data: samples,
-        width: 400,
-        height: 250,
-        target: ".result",
-        x_accessor: "ms",
-        y_accessor: "val",
-        interpolate: "linear"
-    });*/
+     MG.data_graphic({
+     title: "JVM Heap",
+     description: "Heap usage in mb",
+     data: samples,
+     width: 400,
+     height: 250,
+     target: ".result",
+     x_accessor: "ms",
+     y_accessor: "val",
+     interpolate: "linear"
+     });*/
 
     d3.json('http://localhost:4444/api/get?metric=heap',
             function(data) {
@@ -55,6 +55,8 @@
                     data: data,
                     width: 400,
                     height: 250,
+                    error: 'This data is blocked by Lorem Ipsum. Get your **** together, Ipsum.',
+                    missing_text: 'This is an example of a missing chart',
                     target: ".result",
                     x_accessor: "ms",
                     y_accessor: "val",
@@ -62,6 +64,7 @@
                 });
             }
     );
+
 </script>
 </body>
 <html>
